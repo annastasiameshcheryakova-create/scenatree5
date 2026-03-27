@@ -7,23 +7,31 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
     
     <style>
+      /* Оверлей для запуску */
       #overlay {
         position: absolute; z-index: 1000; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
-        color: white; font-family: sans-serif; cursor: pointer; text-align: center;
+        background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+        justify-content: center; align-items: center; color: white;
+        font-family: sans-serif; cursor: pointer; text-align: center;
+      }
+      /* Стиль для кнопки */
+      .start-btn {
+        padding: 15px 30px; font-size: 20px; background: #58cc02;
+        color: white; border: none; border-radius: 10px; cursor: pointer;
       }
     </style>
   </head>
   <body>
-    <div id="overlay" onclick="startAR()">
-      <h1>Натисніть для запуску AR<br>(Активує анімацію та звук)</h1>
+    <div id="overlay">
+      <button class="start-btn" onclick="startAR()">ЗАПУСТИТИ AR ТА ЗВУК</button>
     </div>
 
     <a-scene 
-      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 2; uiScanning: no;" 
+      mindar-image="imageTargetSrc: ./targets.mind; maxTrack: 2; uiScanning: #scanning-overlay;" 
       color-space="sRGB" 
       renderer="colorManagement: true, physicallyCorrectLights" 
-      vr-mode-ui="enabled: false">
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
       
       <a-assets>
         <a-asset-item id="duoModel" src="./duo.gltf"></a-asset-item>
@@ -35,10 +43,13 @@
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
+      <div id="scanning-overlay" class="hidden"></div>
+
       <a-entity id="target1" mindar-image-target="targetIndex: 0">
         <a-gltf-model 
           src="#duoModel" 
           scale="0.05 0.05 0.05" 
+          position="0 0 0"
           animation-mixer>
         </a-gltf-model>
         <a-entity id="sound1" sound="src: #audioDuo; positional: true; loop: true"></a-entity>
@@ -48,6 +59,7 @@
         <a-gltf-model 
           src="#starModel" 
           scale="0.1 0.1 0.1" 
+          position="0 0 0"
           animation-mixer>
         </a-gltf-model>
         <a-entity id="sound2" sound="src: #audioStar; positional: true; loop: true"></a-entity>
@@ -58,21 +70,25 @@
     <script>
       function startAR() {
         document.getElementById('overlay').style.display = 'none';
+        // Активація аудіо-контексту (фікс для Chrome/Safari)
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') { audioCtx.resume(); }
+        audioCtx.resume();
       }
 
-      const list = [
+      // Керування звуком при знаходженні маркерів
+      const targets = [
         { t: document.querySelector('#target1'), s: document.querySelector('#sound1') },
         { t: document.querySelector('#target2'), s: document.querySelector('#sound2') }
       ];
 
-      list.forEach(item => {
+      targets.forEach(item => {
         item.t.addEventListener("targetFound", () => {
-          if (item.s.components.sound) item.s.components.sound.playSound();
+          console.log("Found!");
+          item.s.components.sound.playSound();
         });
         item.t.addEventListener("targetLost", () => {
-          if (item.s.components.sound) item.s.components.sound.stopSound();
+          console.log("Lost!");
+          item.s.components.sound.stopSound();
         });
       });
     </script>

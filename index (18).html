@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.0.0/dist/aframe-extras.min.js"></script>
+    
+    <style>
+      /* Оверлей для запуску */
+      #overlay {
+        position: absolute; z-index: 1000; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+        justify-content: center; align-items: center; color: white;
+        font-family: sans-serif; cursor: pointer; text-align: center;
+      }
+      /* Стиль для кнопки */
+      .start-btn {
+        padding: 15px 30px; font-size: 20px; background: #58cc02;
+        color: white; border: none; border-radius: 10px; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="overlay">
+      <button class="start-btn" onclick="startAR()">ЗАПУСТИТИ AR ТА ЗВУК</button>
+    </div>
+
+    <a-scene 
+      mindar-image="imageTargetSrc:targets.mind; maxTrack: 2; uiScanning: #scanning-overlay;" 
+      color-space="sRGB" 
+      renderer="colorManagement: true, physicallyCorrectLights" 
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
+        <a-asset-item id="duoModel" src="duolingo.glb"></a-asset-item>
+        <a-asset-item id="starModel" src="starmie.glb"></a-asset-item>
+        
+        <audio id="audioDuo" src="mi-bombo-yXEZTfV.mp3" preload="auto"></audio>
+        <audio id="audioStar" src="rington-franklina-gta-5_Ij714i80.mp3" preload="auto"></audio>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <div id="scanning-overlay" class="hidden"></div>
+
+      <a-entity id="target1" mindar-image-target="targetIndex: 0">
+        <a-gltf-model 
+          src="#duoModel" 
+          scale="0.5 0.5 0.5" 
+          position="0 0 0"
+          animation-mixer>
+        </a-gltf-model>
+        <a-entity id="sound1" sound="src: #audioDuo; positional: true; loop: true"></a-entity>
+      </a-entity>
+
+      <a-entity id="target2" mindar-image-target="targetIndex: 1">
+        <a-gltf-model 
+          src="#starModel" 
+          scale="0.1 0.1 0.1" 
+          position="0 0 0"
+          animation-mixer>
+        </a-gltf-model>
+        <a-entity id="sound2" sound="src: #audioStar; positional: true; loop: true"></a-entity>
+      </a-entity>
+
+    </a-scene>
+
+    <script>
+      function startAR() {
+        document.getElementById('overlay').style.display = 'none';
+        // Активація аудіо-контексту (фікс для Chrome/Safari)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        audioCtx.resume();
+      }
+
+      // Створення аудіо об'єктів
+      const audioDuo = new Audio('mi-bombo_yXEZTfV.mp3');
+      audioDuo.loop = true;
+      const audioStar = new Audio('rington-franklina-gta-5_Ij714i80.mp3');
+      audioStar.loop = true;
+
+      // Керування звуком при знаходженні маркерів
+      const targets = [
+        { t: document.querySelector('#target1'), s: audioDuo },
+        { t: document.querySelector('#target2'), s: audioStar }
+      ];
+
+      targets.forEach(item => {
+        item.t.addEventListener("targetFound", () => {
+          console.log("Found!");
+          item.s.play();
+        });
+        item.t.addEventListener("targetLost", () => {
+          console.log("Lost!");
+          item.s.pause();
+        });
+      });
+    </script>
+  </body>
+</html>
